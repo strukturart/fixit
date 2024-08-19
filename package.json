@@ -2,7 +2,6 @@
   "name": "fixit",
   "version": "1.0.0",
   "source": "application/index.html",
-  "browserslist": "Firefox <= 48",
   "scripts": {
     "build": "rm -rf dist/* && parcel build --no-source-maps --no-optimize application/index.html  && cp application/manifest.webapp dist && mkdir dist/assets && cp -r application/assets/icons dist/assets/ && cp -r application/assets/css/marker-icon.png dist/",
     "run": "parcel",

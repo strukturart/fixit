@@ -20,9 +20,8 @@ let report = {
   set: false,
   lat: 46.57591,
   lng: 7.84956,
-  img: "",
-  category: "",
-  email: "",
+  img: null,
+  email: null,
   id: uuidv4(),
 };
 
@@ -46,6 +45,54 @@ if (status.userLang == "de-DE") {
       "Mit dieser App kannst du Schäden an Straßen, Gebäuden und anderen öffentlichen Einrichtungen ganz einfach melden. Hilf mit, unsere Stadt in Schuss zu halten!<br><br>Im nächsten Schritt kannst du den Schaden auf einer Karte markieren, ein Foto hochladen und eine kurze Beschreibung hinzufügen. Wenn du über den Fortschritt informiert werden möchtest, kannst du deine E-Mail-Adresse angeben.",
   };
 }
+
+const send_mail = () => {
+  const form = document.getElementById("form");
+
+  const formData = new FormData(form);
+
+  for (const [key, value] of Object.entries(report)) {
+    if (key !== "set") {
+      formData.append(key, value);
+    }
+  }
+
+  for (let [key, value] of formData.entries()) {
+    console.log(key, value);
+  }
+
+  fetch("./assets/php/send-email.php", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => {
+      if (!response.ok) {
+        // Handle HTTP errors
+        side_toaster("Es ist ein Fehler aufgetreten", 5000);
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.text(); // Parse the response as text
+    })
+    .then((text) => {
+      // Handle the different cases based on the response content
+      if (text.includes("description is empty")) {
+        side_toaster("Bitte beschreiben Sie den Schaden", 4000);
+      }
+      if (text.includes("Invalid email address.")) {
+        side_toaster("E-Mailadresse ungültig", 4000);
+      }
+      if (text.includes("Message has been sent")) {
+        report = {};
+        m.route.set("/success");
+      }
+    })
+
+    .catch((error) => {
+      // Handle errors
+      console.error("Fetch error:", error.message);
+      side_toaster("Es ist ein Fehler aufgetreten", 5000);
+    });
+};
 
 let map_func = () => {
   let marker_current_position;
@@ -562,12 +609,14 @@ var send = {
           "form",
           {
             class: "flex justify-content-center",
+            id: "form",
           },
           [
             m("div", { class: "text" }, "Beschreiben Sie kurz den Schaden"),
             m("textarea", {
               rows: 20,
               cols: 50,
+              name: "description",
             }),
             m(
               "div",
@@ -590,7 +639,8 @@ var send = {
             "button",
             {
               onclick: () => {
-                m.route.set("/success");
+                // m.route.set("/success");
+                send_mail();
               },
             },
             "Schaden senden"
