@@ -1,13 +1,9 @@
 "use strict";
 
 import { bottom_bar, side_toaster, top_bar } from "./assets/js/helper.js";
-import vectorTileLayer from "leaflet-vector-tile-layer";
-
 import L from "leaflet";
-
 import m from "mithril";
 import { v4 as uuidv4 } from "uuid";
-import L from "leaflet";
 
 export let status = {
   default_lang: "de",
@@ -28,6 +24,20 @@ let report = {
 let translation;
 if (status.userLang == "de-DE") {
   translation = {
+    button_0: "weiter >",
+    button_1: "Schaden fotografieren",
+    button_2: "Schaden melden",
+    button_3: "Scahden senden",
+    button_4: "zurück zur Karte",
+    form_message_0: "Es ist ein Fehler aufgetreten",
+    form_message_1: "Bitte beschreiben Sie den Schaden",
+    form_message_2: "Die E-Mailadresse ist ungültig",
+    form_text_0: "Beschreiben Sie kurz den Schaden",
+    form_text_1:
+      "Wenn Sie möchten, tragen Sie Ihre E-Mail-Adresse ein, um eine Benachrichtigung zur Schadensmeldung zu erhalten.",
+
+    map_marker_popup: "<p>Bewege mich zum Ort der Schadens</p>",
+
     impressum: "<strong>Impressum & Datenschutz</strong>",
     impressum_text: "Ihre Daten...",
     success_text:
@@ -37,12 +47,25 @@ if (status.userLang == "de-DE") {
   };
 } else {
   translation = {
-    impressum: "<strong>Impressum & Datenschutz</strong>",
+    button_0: "continuer >",
+    button_1: "Photographier les dégâts",
+    button_2: "déclarer un dommage",
+    button_3: "Envoyer un dommage",
+    button_4: "retour à la carte",
+    form_message_0: "Une erreur est survenue",
+    form_message_1: "Veuillez décrire le dommage",
+    form_message_2: "L'adresse e-mail n'est pas valide",
+    form_text_0: "Décrivez brièvement le dommage",
+    form_text_1:
+      "Si vous le souhaitez, inscrivez votre adresse e-mail pour recevoir une notification de déclaration de sinistre.",
+    map_marker_popup: "<p>Me déplacer vers le lieu du dommage</p>",
+
+    impressum: "<strong>Mentions légales et protection des données</strong>",
     impressum_text: "Ihre Daten...",
     success_text:
-      "Vielen Dank für deine Meldung!<br><br> Wir freuen uns über deine Unterstützung und Mitarbeit, um unsere Stadt in Schuss zu halten. Dein Hinweis hilft uns, Schäden schnell zu beheben und unsere Infrastruktur in einem guten Zustand zu halten. <br>Wir kümmern uns so schnell wie möglich darum und halten dich auf dem Laufenden, falls du deine E-Mail-Adresse hinterlegt hast.",
+      "Merci beaucoup pour ton message !<br>  Nous nous réjouissons de ton soutien et de ta collaboration pour maintenir notre ville en bon état. Nous nous en occuperons le plus rapidement possible et nous te tiendrons au courant si tu as laissé ton adresse e-mail",
     description:
-      "Mit dieser App kannst du Schäden an Straßen, Gebäuden und anderen öffentlichen Einrichtungen ganz einfach melden. Hilf mit, unsere Stadt in Schuss zu halten!<br><br>Im nächsten Schritt kannst du den Schaden auf einer Karte markieren, ein Foto hochladen und eine kurze Beschreibung hinzufügen. Wenn du über den Fortschritt informiert werden möchtest, kannst du deine E-Mail-Adresse angeben.",
+      "Grâce à cette application, tu peux facilement signaler les dommages causés aux rues, aux bâtiments et autres installations publiques. Aide-nous à maintenir notre ville en bon état ! Dans l'étape suivante, tu peux marquer le dommage sur une carte, télécharger une photo et ajouter une brève description. Si tu souhaites être informé de l'avancement, tu peux indiquer ton adresse e-mail.",
   };
 }
 
@@ -68,7 +91,7 @@ const send_mail = () => {
     .then((response) => {
       if (!response.ok) {
         // Handle HTTP errors
-        side_toaster("Es ist ein Fehler aufgetreten", 5000);
+        side_toaster(translation.form_message_0, 5000);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       return response.text(); // Parse the response as text
@@ -76,10 +99,10 @@ const send_mail = () => {
     .then((text) => {
       // Handle the different cases based on the response content
       if (text.includes("description is empty")) {
-        side_toaster("Bitte beschreiben Sie den Schaden", 4000);
+        side_toaster(translation.form_message_1, 4000);
       }
       if (text.includes("Invalid email address.")) {
-        side_toaster("E-Mailadresse ungültig", 4000);
+        side_toaster(translation.form_message_2, 4000);
       }
       if (text.includes("Message has been sent")) {
         report = {};
@@ -90,7 +113,7 @@ const send_mail = () => {
     .catch((error) => {
       // Handle errors
       console.error("Fetch error:", error.message);
-      side_toaster("Es ist ein Fehler aufgetreten", 5000);
+      side_toaster(translation.form_message_0, 5000);
     });
 };
 
@@ -110,6 +133,7 @@ let map_func = () => {
 
   //vector
   //https://gitlab.com/jkuebart/Leaflet.VectorTileLayer/
+  /*
   let options = {
     fetchOptions: {
       method: "GET",
@@ -119,6 +143,7 @@ let map_func = () => {
   let vectorURL =
     "https://vectortiles.geo.admin.ch/tiles/ch.swisstopo.base.vt/v1.0.0/{z}/{x}/{y}.pbf";
   const vectorLayer = vectorTileLayer(vectorURL, options);
+  */
 
   //default
   const default_layer = L.tileLayer(
@@ -129,13 +154,19 @@ let map_func = () => {
   //sat
   const osm = L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    { maxNativeZoom: 18, maxZoom: 20 }
+    {
+      minZoom: 10,
+      maxZoom: 16,
+      useCache: true,
+      crossOrigin: true,
+    }
   );
 
   var d = L.tileLayer.wms("https://wms.geo.admin.ch/", {
     layers:
-      "ch.swisstopo.amtliches-gebaeudeadressverzeichnis,ch.swisstopo.amtliches-strassenverzeichnis",
+      "ch.swisstopo.amtliches-gebaeudeadressverzeichnis,ch.swisstopo.amtliches-strassenverzeichnis,ch.swisstopo.swissimage",
     SERVICE: "WMS",
+
     REQUEST: "GetMap",
     format: "image/png",
     transparent: true,
@@ -145,7 +176,7 @@ let map_func = () => {
     cacheMaxAge: 2592000000,
     useCache: true,
     maxNativeZoom: 18,
-    maxZoom: 20,
+    maxZoom: 21,
     minZoom: 16,
     crossOrigin: true,
   });
@@ -180,13 +211,10 @@ let map_func = () => {
       );
 
       if (!marker_current_position.getPopup()) {
-        marker_current_position.bindPopup(
-          "<p>Bewege mich zum Ort der Schadens</p>",
-          {
-            closeOnClick: true,
-            autoClose: false,
-          }
-        );
+        marker_current_position.bindPopup(translation.map_marker_popup, {
+          closeOnClick: true,
+          autoClose: false,
+        });
       }
       marker_current_position.openPopup();
 
@@ -327,7 +355,7 @@ var map = {
                   m.route.set("/getImage");
                 },
               },
-              "Schaden fotografieren"
+              translation.button_1
             ),
             m(
               "button",
@@ -337,7 +365,7 @@ var map = {
                   m.route.set("/send");
                 },
               },
-              "weiter >"
+              translation.button_0
             ),
           ]),
         ]
@@ -351,9 +379,7 @@ var start = {
     return m(
       "div",
       {
-        class: {
-          class: "page width-100 height-100 flex justify-content-center",
-        },
+        class: "page width-100 flex justify-content-center",
 
         oncreate: () => {
           top_bar("", "", "");
@@ -366,7 +392,6 @@ var start = {
             "div",
             {
               class: "width-100 flex justify-content-center",
-              style: "padding:40px 0 0 0;",
             },
             [
               m("div", { class: "text" }, m.trust(translation.description)),
@@ -409,7 +434,7 @@ var start = {
                   m.route.set("/map");
                 },
               },
-              "Schaden melden"
+              translation.button_2
             ),
           ]
         ),
@@ -612,17 +637,13 @@ var send = {
             id: "form",
           },
           [
-            m("div", { class: "text" }, "Beschreiben Sie kurz den Schaden"),
+            m("div", { class: "text" }, translation.form_text_0),
             m("textarea", {
               rows: 20,
               cols: 50,
               name: "description",
             }),
-            m(
-              "div",
-              { class: "text" },
-              "Wenn Sie möchten, tragen Sie Ihre E-Mail-Adresse ein, um eine Benachrichtigung zur Schadensmeldung zu erhalten."
-            ),
+            m("div", { class: "text" }, translation.form_text_1),
             m("input", {
               class: "text",
               type: "email",
@@ -639,11 +660,10 @@ var send = {
             "button",
             {
               onclick: () => {
-                // m.route.set("/success");
                 send_mail();
               },
             },
-            "Schaden senden"
+            translation.button_3
           ),
           m(
             "button",
@@ -652,7 +672,7 @@ var send = {
                 m.route.set("/map");
               },
             },
-            "zurück zur Karte"
+            translation.button_4
           ),
         ]),
       ]
