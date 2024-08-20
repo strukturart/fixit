@@ -5,7 +5,8 @@
   "scripts": {
     "build": "rm -rf dist/* && parcel build --no-source-maps --no-optimize application/index.html  && cp application/manifest.webapp dist && mkdir dist/assets && cp -r application/assets/icons dist/assets/ && cp -r application/assets/css/marker-icon.png dist/",
     "run": "parcel",
-    "web": "rm -rf webpage/* && parcel build --dist-dir webpage --public-url ./ --no-source-maps --no-optimize application/index.html  && cp application/manifest.webmanifest webpage  && cp -r application/assets/ webpage/assets/  && cp -r application/assets/css/marker-icon.png webpage/"
+    "web": "rm -rf webpage/* && parcel build --dist-dir webpage --public-url ./ --no-source-maps --no-optimize application/index.html  && cp application/manifest.webmanifest webpage  && cp -r application/assets/ webpage/assets/  && cp -r application/assets/css/marker-icon.png webpage/",
+    "docs": "rm -rf docs/* && parcel build --dist-dir docs --public-url ./ --no-source-maps --no-optimize application/index.html  && cp application/manifest.webmanifest docs  && cp -r application/assets/ docs/assets/  && cp -r application/assets/css/marker-icon.png docs/"
   },
   "devDependencies": {
     "@babel/cli": "^7.18.10",
@@ -31,6 +32,7 @@
     "stream-browserify": "^3.0.0"
   },
   "dependencies": {
+    "@maplibre/maplibre-gl-leaflet": "^0.0.22",
     "@parcel/service-worker": "^2.8.0",
     "dotenv": "^16.4.1",
     "leaflet": "^1.9.4",

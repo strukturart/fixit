@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="emoji"
+   viewBox="0 0 72 72"
+   version="1.1"
+   sodipodi:docname="icon.svg"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs72" />
+  <sodipodi:namedview
+     id="namedview70"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="1.487069"
+     inkscape:cx="27.234782"
+     inkscape:cy="76.324636"
+     inkscape:window-width="1920"
+     inkscape:window-height="1016"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="emoji" />
+  <circle
+     style="fill:#005cff;stroke-width:1.22883;fill-opacity:1"
+     id="path852"
+     cx="36"
+     cy="36"
+     r="34.699993" />
+  <g
+     id="g1138"
+     transform="matrix(0.09684018,0,0,0.09684018,11.208914,11.208902)">
+    <polygon
+       style="fill:#ff9911"
+       points="256.001,512 11.084,370.598 11.084,353.719 256.001,212.317 500.916,353.719 500.916,370.598 "
+       id="polygon1108" />
+    <path
+       id="SVGCleanerId_0"
+       style="fill:#f18700"
+       d="M 382.247,336.943 304.956,25.953 h -0.009 c -0.941,-6.455 -5.655,-12.757 -14.162,-17.669 -19.131,-11.045 -50.435,-11.045 -69.566,0 -8.507,4.912 -13.222,11.214 -14.162,17.669 h -0.009 l -77.292,310.99 c -9.104,24.084 2.475,50.31 34.74,68.938 50.328,29.057 132.683,29.057 183.012,0 32.262,-18.628 43.842,-44.855 34.739,-68.938 z" />
+    <g
+       id="g1112">
+      <path
+         id="SVGCleanerId_0_1_"
+         style="fill:#f18700"
+         d="M 382.247,336.943 304.956,25.953 h -0.009 c -0.941,-6.455 -5.655,-12.757 -14.162,-17.669 -19.131,-11.045 -50.435,-11.045 -69.566,0 -8.507,4.912 -13.222,11.214 -14.162,17.669 h -0.009 l -77.292,310.99 c -9.104,24.084 2.475,50.31 34.74,68.938 50.328,29.057 132.683,29.057 183.012,0 32.262,-18.628 43.842,-44.855 34.739,-68.938 z" />
+    </g>
+    <polygon
+       style="fill:#f18700"
+       points="11.084,353.719 256.001,495.121 256.001,512 11.084,370.598 "
+       id="polygon1114" />
+    <polygon
+       style="fill:#d07400"
+       points="500.916,353.719 256.001,495.121 256.001,512 500.916,370.598 "
+       id="polygon1116" />
+    <path
+       style="fill:#ff9911"
+       d="m 221.218,48.448 c -19.131,-11.045 -19.131,-29.119 0,-40.164 19.131,-11.045 50.435,-11.045 69.566,0 19.131,11.045 19.131,29.119 0,40.164 -19.131,11.045 -50.436,11.045 -69.566,0 z"
+       id="path1118" />
+    <path
+       style="fill:#d07400"
+       d="m 235.13,40.415 c -11.478,-6.627 -11.478,-17.471 0,-24.098 11.478,-6.627 30.261,-6.627 41.74,0 11.478,6.627 11.478,17.471 0,24.098 -11.478,6.627 -30.261,6.627 -41.74,0 z"
+       id="path1120" />
+    <path
+       style="fill:#e0e0e2"
+       d="m 362.967,259.374 -26.3,-105.819 c -3.277,2.736 -7.004,5.342 -11.215,7.773 -38.2,22.054 -100.708,22.054 -138.907,0 -4.211,-2.431 -7.937,-5.037 -11.215,-7.774 v 0 l -26.3,105.819 c 5.071,5.56 11.202,10.804 18.412,15.594 48.705,32.36 128.406,32.36 177.111,0 7.212,-4.789 13.345,-10.034 18.414,-15.593 z"
+       id="path1122" />
+  </g>
+</svg>

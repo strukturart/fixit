@@ -16,6 +16,12 @@
     <link rel="stylesheet" href="assets/css/leaflet.css" />
 
 
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel='stylesheet' />
+
+   
+
+
+
 </head>
 
 <meta
@@ -36,21 +42,7 @@ content="width=device-width,user-scalable=no,initial-scale=1"
             <div></div>
           </div>
     
-            <div id="bottom-bar">
-                <div class="inner flex justify-content-spacebetween width-100">
-                    <div class="button-left"></div>
-                    <div class="button-center"></div>
-                    <div class="button-right"></div>
-                </div>
-            </div>
-
-            <div id="top-bar">
-                <div class="inner flex justify-content-spacebetween width-100">
-                    <div class="button-left"></div>
-                    <div class="button-center"></div>
-                    <div class="button-right"></div>
-                </div>
-            </div>
+            
         <div id="app"></div>
     </div>
 
@@ -58,6 +50,8 @@ content="width=device-width,user-scalable=no,initial-scale=1"
 
 </body>
 
+    <!-- Maplibre GL -->
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
 
 <script type="module" src="index.js"></script>
 </html>

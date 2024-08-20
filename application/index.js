@@ -4,13 +4,13 @@ import { bottom_bar, side_toaster, top_bar } from "./assets/js/helper.js";
 import L from "leaflet";
 import m from "mithril";
 import { v4 as uuidv4 } from "uuid";
+import vectorTileLayer from "leaflet-vector-tile-layer";
+import maplibreGL from "@maplibre/maplibre-gl-leaflet";
 
 export let status = {
   default_lang: "de",
   userLang: navigator.language || navigator.userLanguage,
 };
-
-console.log(status);
 
 let report = {
   set: false,
@@ -19,55 +19,84 @@ let report = {
   img: null,
   email: null,
   id: uuidv4(),
+  updateUser: false,
 };
 
 let translation;
-if (status.userLang == "de-DE") {
-  translation = {
-    button_0: "weiter >",
-    button_1: "Schaden fotografieren",
-    button_2: "Schaden melden",
-    button_3: "Scahden senden",
-    button_4: "zurück zur Karte",
-    form_message_0: "Es ist ein Fehler aufgetreten",
-    form_message_1: "Bitte beschreiben Sie den Schaden",
-    form_message_2: "Die E-Mailadresse ist ungültig",
-    form_text_0: "Beschreiben Sie kurz den Schaden",
-    form_text_1:
-      "Wenn Sie möchten, tragen Sie Ihre E-Mail-Adresse ein, um eine Benachrichtigung zur Schadensmeldung zu erhalten.",
+let trans = () => {
+  if (status.userLang.includes("de-DE")) {
+    translation = {
+      button_0: "ohne Foto weiter >",
+      button_1: "Schaden fotografieren",
+      button_2: "Schaden melden",
+      button_3: "Schaden senden",
+      button_4: "< zur Karte",
+      button_5: "< zurück",
+      button_6: "Foto ersetzen",
+      button_7: "weiter >",
 
-    map_marker_popup: "<p>Bewege mich zum Ort der Schadens</p>",
+      form_message_0: "Es ist ein Fehler aufgetreten",
+      form_message_1: "Bitte beschreibe den Schaden",
+      form_message_2: "Die E-Mailadresse ist ungültig",
+      form_message_3: "Schadensmeldung",
 
-    impressum: "<strong>Impressum & Datenschutz</strong>",
-    impressum_text: "Ihre Daten...",
-    success_text:
-      "Vielen Dank für deine Meldung!<br><br> Wir freuen uns über deine Unterstützung und Mitarbeit, um unsere Stadt in Schuss zu halten. Dein Hinweis hilft uns, Schäden schnell zu beheben und unsere Infrastruktur in einem guten Zustand zu halten. <br>Wir kümmern uns so schnell wie möglich darum und halten dich auf dem Laufenden, falls du deine E-Mail-Adresse hinterlegt hast.",
-    description:
-      "Mit dieser App kannst du Schäden an Straßen, Gebäuden und anderen öffentlichen Einrichtungen ganz einfach melden. Hilf mit, unsere Stadt in Schuss zu halten!<br><br>Im nächsten Schritt kannst du den Schaden auf einer Karte markieren, ein Foto hochladen und eine kurze Beschreibung hinzufügen. Wenn du über den Fortschritt informiert werden möchtest, kannst du deine E-Mail-Adresse angeben.",
-  };
-} else {
-  translation = {
-    button_0: "continuer >",
-    button_1: "Photographier les dégâts",
-    button_2: "déclarer un dommage",
-    button_3: "Envoyer un dommage",
-    button_4: "retour à la carte",
-    form_message_0: "Une erreur est survenue",
-    form_message_1: "Veuillez décrire le dommage",
-    form_message_2: "L'adresse e-mail n'est pas valide",
-    form_text_0: "Décrivez brièvement le dommage",
-    form_text_1:
-      "Si vous le souhaitez, inscrivez votre adresse e-mail pour recevoir une notification de déclaration de sinistre.",
-    map_marker_popup: "<p>Me déplacer vers le lieu du dommage</p>",
+      form_text_0: "Beschreibe kurz den Schaden",
+      form_text_1:
+        "Deine E-Mailadresse benötigen wir für eventuelle Rückfragen.",
+      form_text_2:
+        "Ich möchte über den Verlauf des Schadens informiert werden.",
+      form_toggle_true: "Ja",
 
-    impressum: "<strong>Mentions légales et protection des données</strong>",
-    impressum_text: "Ihre Daten...",
-    success_text:
-      "Merci beaucoup pour ton message !<br>  Nous nous réjouissons de ton soutien et de ta collaboration pour maintenir notre ville en bon état. Nous nous en occuperons le plus rapidement possible et nous te tiendrons au courant si tu as laissé ton adresse e-mail",
-    description:
-      "Grâce à cette application, tu peux facilement signaler les dommages causés aux rues, aux bâtiments et autres installations publiques. Aide-nous à maintenir notre ville en bon état ! Dans l'étape suivante, tu peux marquer le dommage sur une carte, télécharger une photo et ajouter une brève description. Si tu souhaites être informé de l'avancement, tu peux indiquer ton adresse e-mail.",
-  };
-}
+      form_toggle_false: "Nein",
+
+      map_marker_popup: "<p>Bewege mich zum Ort der Schadens</p>",
+
+      impressum: "<strong>Impressum & Datenschutz</strong>",
+      impressum_text:
+        "<h1>Datenschutz</h1><h1>Lizenzen</h1>Mithril MIT<br>Leaflet MIT<br>GeoAdmin<h2>Code</h2><a href='https://github.com/strukturart/fixit'>https://github.com/strukturart/fixit</a>",
+      success_text:
+        "Vielen Dank für deine Meldung!<br><br> Wir freuen uns über deine Unterstützung und Mitarbeit, um unsere Stadt in Schuss zu halten. Dein Hinweis hilft uns, Schäden schnell zu beheben und unsere Infrastruktur in einem guten Zustand zu halten. <br>Wir kümmern uns so schnell wie möglich darum und halten dich auf dem Laufenden.",
+      description:
+        "<h1>Schaden melden</h1><h2>Hilf mit, unsere Stadt in Schuss zu halten!</h2><br>Mit dieser App kannst du Schäden an Straßen, Gebäuden und anderen öffentlichen Einrichtungen ganz einfach melden.<br><br>Im nächsten Schritt kannst du den Schaden auf einer Karte markieren, ein Foto hochladen und eine kurze Beschreibung hinzufügen.",
+    };
+  } else {
+    translation = {
+      button_0: "continuer >",
+      button_1: "Photographier les dégâts",
+      button_2: "déclarer un dommage",
+      button_3: "Envoyer un dommage",
+      button_4: "retour à la carte",
+      button_5: "< retour",
+      button_6: "Foto ersetzen",
+      button_7: "continuer >",
+
+      form_message_0: "Une erreur est survenue",
+      form_message_1: "Veuillez décrire le dommage",
+      form_message_2: "L'adresse e-mail n'est pas valide",
+      form_message_3: "Schadensmeldung",
+
+      form_text_0: "Décrivez brièvement le dommage",
+      form_text_1:
+        "Nous avons besoin de ton adresse e-mail pour d'éventuelles questions.",
+      form_text_2: "Je souhaite être informé(e) de l'évolution du sinistre.",
+
+      form_toggle_true: "Oui",
+
+      form_toggle_false: "Non",
+
+      map_marker_popup: "<p>Me déplacer vers le lieu du dommage</p>",
+
+      impressum: "<strong>Impressum & protection des données</strong>",
+      impressum_text: "Ihre Daten...",
+      success_text:
+        "Merci beaucoup pour ton message !<br>  Nous nous réjouissons de ton soutien et de ta collaboration pour maintenir notre ville en bon état. Nous nous en occuperons le plus rapidement possible et nous te tiendrons au courant.",
+      description:
+        "<h1>Signaler les dégâts</h1><h2>Aide-nous à maintenir notre ville en bon état !</h2><br><br>Grâce à cette application, tu peux facilement signaler les dommages causés aux rues, aux bâtiments et autres installations publiques. <br><br> Dans l'étape suivante, tu peux marquer le dommage sur une carte, télécharger une photo et ajouter une brève description.",
+    };
+  }
+};
+
+trans();
 
 const send_mail = () => {
   const form = document.getElementById("form");
@@ -75,13 +104,9 @@ const send_mail = () => {
   const formData = new FormData(form);
 
   for (const [key, value] of Object.entries(report)) {
-    if (key !== "set") {
+    if (key !== "set" && value != null) {
       formData.append(key, value);
     }
-  }
-
-  for (let [key, value] of formData.entries()) {
-    console.log(key, value);
   }
 
   fetch("./assets/php/send-email.php", {
@@ -105,7 +130,10 @@ const send_mail = () => {
         side_toaster(translation.form_message_2, 4000);
       }
       if (text.includes("Message has been sent")) {
-        report = {};
+        report.img = "";
+        report.description = "";
+        report.email = "";
+
         m.route.set("/success");
       }
     })
@@ -121,7 +149,6 @@ let map_func = () => {
   let marker_current_position;
 
   let map = new L.Map("map", {
-    crs: L.CRS.EPSG3857,
     minZoom: 10,
     keyboard: true,
     zoomControl: true,
@@ -133,40 +160,29 @@ let map_func = () => {
 
   //vector
   //https://gitlab.com/jkuebart/Leaflet.VectorTileLayer/
-  /*
+
   let options = {
+    minZoom: 18,
+    maxZoom: 22,
+    maxNativeZoom: 14,
+
     fetchOptions: {
-      method: "GET",
       mode: "no-cors",
     },
   };
   let vectorURL =
-    "https://vectortiles.geo.admin.ch/tiles/ch.swisstopo.base.vt/v1.0.0/{z}/{x}/{y}.pbf";
+    "https://vectortiles.geo.admin.ch/tiles/ch.swisstopo.imagerybasemap.vt/v1.0.0/{z}/{x}/{y}.pbf";
   const vectorLayer = vectorTileLayer(vectorURL, options);
-  */
 
-  //default
-  const default_layer = L.tileLayer(
-    "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg",
-    { maxNativeZoom: 18, maxZoom: 20 }
-  );
-
-  //sat
-  const osm = L.tileLayer(
-    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    {
-      minZoom: 10,
-      maxZoom: 16,
-      useCache: true,
-      crossOrigin: true,
-    }
-  );
+  L.maplibreGL({
+    style:
+      "https://vectortiles.geo.admin.ch/styles/ch.swisstopo.imagerybasemap.vt/style.json",
+  }).addTo(map);
 
   var d = L.tileLayer.wms("https://wms.geo.admin.ch/", {
-    layers:
-      "ch.swisstopo.amtliches-gebaeudeadressverzeichnis,ch.swisstopo.amtliches-strassenverzeichnis,ch.swisstopo.swissimage",
+    layers: "ch.swisstopo.amtliches-gebaeudeadressverzeichnis",
     SERVICE: "WMS",
-
+    crs: L.CRS.EPSG3857,
     REQUEST: "GetMap",
     format: "image/png",
     transparent: true,
@@ -176,13 +192,12 @@ let map_func = () => {
     cacheMaxAge: 2592000000,
     useCache: true,
     maxNativeZoom: 18,
-    maxZoom: 21,
-    minZoom: 16,
+    maxZoom: 22,
+    minZoom: 10,
     crossOrigin: true,
   });
 
-  map.addLayer(osm);
-  map.addLayer(d);
+  map.addLayer(vectorLayer);
 
   map.setView([report.lat, report.lng], 18);
 
@@ -217,20 +232,17 @@ let map_func = () => {
         });
       }
       marker_current_position.openPopup();
+      report.lat = position.coords.latitude;
 
-      report.lat = position.coords.longitude;
-      report.lng = position.coords.latitude;
+      report.lng = position.coords.longitude;
     } else {
       map.setView([report.lat, report.lng], 20);
       marker_current_position.setLatLng([report.lat, report.lng], 20);
       if (!marker_current_position.getPopup()) {
-        marker_current_position.bindPopup(
-          "<p>Bewege mich zum Ort der Schadens</p>",
-          {
-            closeOnClick: true,
-            autoClose: false,
-          }
-        );
+        marker_current_position.bindPopup(translation.map_marker_popup, {
+          closeOnClick: true,
+          autoClose: false,
+        });
       }
       marker_current_position.openPopup();
     }
@@ -295,13 +307,12 @@ var intro = {
         oninit: function () {
           setTimeout(function () {
             m.route.set("/start");
-          }, 5000);
+          }, 3000);
         },
       },
       [
         m("img", {
           src: "./assets/icons/intro.svg",
-
           oncreate: () => {
             fetch("/manifest.webmanifest")
               .then((r) => r.json())
@@ -312,6 +323,7 @@ var intro = {
               });
           },
         }),
+        m("div", { id: "circle" }),
         m(
           "div",
           {
@@ -335,7 +347,7 @@ var intro = {
 
 var map = {
   view: function () {
-    return m("div", { id: "map-wrapper" }, [
+    return m("div", { class: "map-wrapper" }, [
       m(
         "div",
         {
@@ -345,28 +357,52 @@ var map = {
             map_func();
           },
         },
+
         [
-          m("nav", { class: "flex width-100 justify-content-center" }, [
+          m("div", { class: "flex justify-content-center" }, [
             m(
               "button",
               {
-                class: "item ",
+                class: "level-1",
+                id: "button-photo",
                 onclick: () => {
                   m.route.set("/getImage");
                 },
               },
-              translation.button_1
+              [
+                m(
+                  "div",
+                  m.trust(
+                    translation.button_1 +
+                      "<img class='camera-icon' src='/assets/image/camera.svg'>"
+                  )
+                ),
+              ]
             ),
-            m(
-              "button",
-              {
-                class: "item",
-                onclick: () => {
-                  m.route.set("/send");
+          ]),
+          m("nav", { class: "flex width-100 justify-content-center" }, [
+            m("div", { class: "nav-inner flex justify-content-spacebetween" }, [
+              m(
+                "button",
+                {
+                  class: "item level-0",
+                  onclick: () => {
+                    m.route.set("/start");
+                  },
                 },
-              },
-              translation.button_0
-            ),
+                translation.button_5
+              ),
+              m(
+                "button",
+                {
+                  class: "item",
+                  onclick: () => {
+                    m.route.set("/send");
+                  },
+                },
+                translation.button_0
+              ),
+            ]),
           ]),
         ]
       ),
@@ -379,14 +415,41 @@ var start = {
     return m(
       "div",
       {
-        class: "page width-100 flex justify-content-center",
-
-        oncreate: () => {
-          top_bar("", "", "");
-          bottom_bar("", "", "");
-        },
+        class: "page width-100 flex justify-content-center algin-item-start",
       },
       [
+        m(
+          "div",
+          {
+            id: "lang-switch",
+          },
+          [
+            m("input", {
+              type: "checkbox",
+              id: "switch",
+            }),
+
+            m(
+              "label",
+              {
+                for: "switch",
+                onclick: () => {
+                  status.userLang.includes("fr")
+                    ? (status.userLang = "de-DE")
+                    : (status.userLang = "fr");
+
+                  if (!status.userLang.includes("de-DE"))
+                    document.querySelector("#switch").checked = false;
+
+                  trans();
+
+                  m.redraw();
+                },
+              },
+              [m("div", [m("span", "DE"), m("span", "FR")])]
+            ),
+          ]
+        ),
         m("div", { class: "flex justify-content-center" }, [
           m(
             "div",
@@ -420,23 +483,21 @@ var start = {
         m(
           "nav",
           {
-            class: "width-100 b-0  flex width-100 justify-content-center",
-            style: "margin-top: auto;",
+            class: "width-100   flex width-100 justify-content-center",
           },
-          [
-            m(
-              "button",
-              {
-                tabindex: 0,
-                class: "item ",
-
-                onclick: () => {
-                  m.route.set("/map");
+          m("div", { class: "nav-inner" }, [
+            [
+              m(
+                "button",
+                {
+                  onclick: () => {
+                    m.route.set("/map");
+                  },
                 },
-              },
-              translation.button_2
-            ),
-          ]
+                translation.button_2
+              ),
+            ],
+          ])
         ),
       ]
     );
@@ -448,22 +509,14 @@ var impressum = {
     return m(
       "div",
       {
-        class: {
-          class: "page width-100 height-100 flex justify-content-center",
-        },
-
-        oncreate: () => {
-          top_bar("", "", "");
-          bottom_bar("", "", "");
-        },
+        class: "page width-100 height-100 flex justify-content-center",
       },
       [
-        m("div", { class: "a-0 flex justify-content-center" }, [
+        m("div", { class: "flex justify-content-center" }, [
           m(
             "div",
             {
               class: "width-100 flex justify-content-center",
-              style: "margin:20px 0 100px 0; padding:10px",
             },
             [m("div", { class: "text" }, m.trust(translation.impressum_text))]
           ),
@@ -471,23 +524,19 @@ var impressum = {
 
         m(
           "nav",
-          {
-            class: "width-100 b-0  flex width-100 justify-content-center",
-            style: "margin-top: auto;", // Pushes this div to the bottom
-          },
-          [
-            m(
-              "button",
-              {
-                tabindex: 0,
-                class: "item ",
 
-                onclick: () => {
-                  m.route.set("/start");
+          [
+            m("div", { class: "nav-inner" }, [
+              m(
+                "button",
+                {
+                  onclick: () => {
+                    m.route.set("/start");
+                  },
                 },
-              },
-              "zurück"
-            ),
+                translation.button_5
+              ),
+            ]),
           ]
         ),
       ]
@@ -500,14 +549,14 @@ var getImage = {
   stream: null,
 
   view: function () {
-    return m("div", { class: "width-100" }, [
+    return m("div", { class: "page width-100 flex justify-content-center" }, [
       m("canvas", {
         id: "canvas",
-        style: { display: "block" },
       }),
       m("nav", { class: "width-100 flex justify-content-center" }, [
         m("button", {
           id: "photo-shut-button",
+
           onclick: () => {
             if (!this.video || !this.canvas) {
               console.error("One or more elements are not initialized.");
@@ -536,7 +585,6 @@ var getImage = {
               this.stream = null;
             }
 
-            // Navigate to the overview route
             m.route.set("/imageView");
           },
         }),
@@ -549,9 +597,6 @@ var getImage = {
         class: "",
         id: "video",
         oncreate: (vnode) => {
-          top_bar("", "", "");
-          bottom_bar("", "", "");
-
           this.video = vnode.dom;
           this.canvas = document.getElementById("canvas");
 
@@ -592,29 +637,31 @@ var imageView = {
   view: function () {
     return m(
       "div",
-      { class: "page width-100 height-100 flex justify-content-center" },
+      { class: "width-100 page flex justify-content-center algin-item-start" },
       [
         m("img", { id: "overview-img", src: report.img }),
         m("nav", { class: "flex width-100 justify-content-center" }, [
-          m(
-            "button",
-            {
-              onclick: () => {
-                m.route.set("/getImage");
+          m("div", { class: "nav-inner flex justify-content-spacebetween" }, [
+            m(
+              "button",
+              {
+                onclick: () => {
+                  m.route.set("/getImage");
+                },
               },
-            },
-            "Foto ersetzen"
-          ),
+              translation.button_6
+            ),
 
-          m(
-            "button",
-            {
-              onclick: () => {
-                m.route.set("/send");
+            m(
+              "button",
+              {
+                onclick: () => {
+                  m.route.set("/send");
+                },
               },
-            },
-            "weiter >"
-          ),
+              translation.button_7
+            ),
+          ]),
         ]),
       ]
     );
@@ -627,16 +674,18 @@ var send = {
       "div",
       {
         id: "send",
-        class: "width-100 height-100 justify-content-center algin-item-start",
+        class:
+          "page page-1 width-100 flex justify-content-center algin-item-start",
       },
       [
         m(
           "form",
           {
-            class: "flex justify-content-center",
             id: "form",
+            class: "flex justify-content-center",
           },
           [
+            m("h1", {}, translation.form_message_3),
             m("div", { class: "text" }, translation.form_text_0),
             m("textarea", {
               rows: 20,
@@ -652,28 +701,89 @@ var send = {
                 report.email = e.target.value;
               },
             }),
+
+            m(
+              "div",
+              {
+                class: "checkbox-container",
+              },
+              [
+                m("input", {
+                  type: "checkbox",
+                  id: "myCheckbox",
+                  checked: report.updateUser,
+                  onchange: (e) => {
+                    report.updateUser = e.target.checked;
+                  },
+                }),
+                m(
+                  "label",
+                  { for: "myCheckbox", class: "checkbox-label" },
+                  translation.form_text_2
+                ),
+                m(
+                  "div",
+                  {
+                    class: "button-box  flex justify-content-center",
+                  },
+                  [
+                    m(
+                      "button",
+                      {
+                        class: "button-true",
+                        onclick: (event) => {
+                          event.preventDefault();
+                          report.updateUser = true;
+                          document.getElementById("myCheckbox").checked =
+                            report.updateUser;
+                        },
+                      },
+                      translation.form_toggle_true
+                    ),
+                    m(
+                      "button",
+                      {
+                        class: "button-false",
+
+                        onclick: (event) => {
+                          event.preventDefault();
+                          report.updateUser = false;
+                          document.getElementById("myCheckbox").checked =
+                            report.updateUser;
+                        },
+                      },
+                      translation.form_toggle_false
+                    ),
+                  ]
+                ),
+              ]
+            ),
           ]
         ),
 
         m("nav", { class: "flex width-100 justify-content-center" }, [
-          m(
-            "button",
-            {
-              onclick: () => {
-                send_mail();
+          m("div", { class: "nav-inner flex justify-content-spacebetween" }, [
+            m(
+              "button",
+              {
+                class: "level-0",
+                onclick: () => {
+                  m.route.set("/map");
+                },
               },
-            },
-            translation.button_3
-          ),
-          m(
-            "button",
-            {
-              onclick: () => {
-                m.route.set("/map");
+              translation.button_4
+            ),
+            m(
+              "button",
+              {
+                onclick: () => {
+                  send_mail();
+                },
+                class: "level-1",
               },
-            },
-            translation.button_4
-          ),
+              translation.button_3
+            ),
+          ]),
         ]),
       ]
     );
@@ -684,7 +794,7 @@ var success = {
   view: function () {
     return m(
       "div",
-      { class: "width-100 height-100 flex justify-content-center" },
+      { class: "page width-100 height-100 flex justify-content-center" },
       [
         m(
           "div",
