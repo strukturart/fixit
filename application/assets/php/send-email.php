@@ -61,9 +61,7 @@ try {
     $lng = $temp;
 
     $id = isset($_POST['id']) ? $_POST['id'] : '';
-    if (!empty($id)) {
-        $id = "Schadensnummer " . $id;
-    } else {
+    if (empty($id)) {
         echo "invalid";
         exit();
     }
@@ -83,6 +81,7 @@ try {
     $description = isset($_POST['description']) ? $_POST['description'] : '';
     $description = strip_tags($description);
     $description = $purifier->purify($description);
+    $description = htmlspecialchars($description, ENT_QUOTES, 'UTF-8');
 
     if ($description == "") {
         echo "description is empty";
@@ -102,8 +101,72 @@ try {
 
 
     if ($updateUser == true) {
-        $updateUser = "Wir werden dich über den Verlauf des Schadens informieren.";
+        $updateUser_text = "Wir werden dich über den Verlauf des Schadens informieren.";
     }
+
+
+    // Prepare the data to be written to the JSON file
+    $export_data = [
+        'lat' => $lat,
+        'lng' => $lng,
+        'id' => $id,
+        'updateUser' => $updateUser,
+        'description' => $description,
+        'email' => $email,
+        'status' => 'reported', // reported, confirmed, rejected, in progress, repaired
+        'timestamp' => date("Y-m-d H:i:s")
+    ];
+
+    // Process the image (if any)
+    if (isset($_POST['img']) && $_POST['img'] && $_POST['img'] !== null) {
+        $export_data['img'] = $_POST['img'];
+
+        // Extract base64 string (assuming the image is in base64 format)
+        $dataURL = $_POST['img'];
+        list($type, $data) = explode(';', $dataURL);
+        list(, $data) = explode(',', $data);
+        $data = base64_decode($data);
+
+        // Attach the image as an inline attachment
+        $mail->addStringEmbeddedImage($data, 'inlineimg', 'image.jpeg', PHPMailer::ENCODING_BASE64, 'image/jpeg');
+    }
+
+    // Path to the JSON file
+    $jsonFilePath = '../../data.json';
+
+    // Read existing data from JSON file or initialize an empty array if the file doesn't exist
+    if (file_exists($jsonFilePath)) {
+        $jsonData = file_get_contents($jsonFilePath);
+        $arrData = json_decode($jsonData, true);
+
+        // Check for JSON decoding errors
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo "Error decoding JSON: " . json_last_error_msg();
+            $arrData = [];
+        }
+    } else {
+        $arrData = [];
+    }
+
+    // Debugging: Check the content of $export_data
+    if (empty($export_data)) {
+        echo "Export data is empty.";
+        exit();
+    }
+
+    // Append new data to the array
+    $arrData[] = $export_data;
+
+    // Debugging: Print the array before writing it
+
+
+    // Write the updated array back to the JSON file (this will create the file if it does not exist)
+    if (file_put_contents($jsonFilePath, json_encode($arrData, JSON_PRETTY_PRINT))) {
+        echo "Data successfully saved.";
+    } else {
+        echo "Error writing to JSON file.";
+    }
+
 
 
 
@@ -128,17 +191,7 @@ try {
     $mail->CharSet = "UTF-8";
 
 
-    // Process the image (if any)
-    if (isset($_POST['img']) && $_POST['img'] && $_POST['img'] !== null) {
-        // Extract base64 string (assuming the image is in base64 format)
-        $dataURL = $_POST['img'];
-        list($type, $data) = explode(';', $dataURL);
-        list(, $data) = explode(',', $data);
-        $data = base64_decode($data);
 
-        // Attach the image as an inline attachment
-        $mail->addStringEmbeddedImage($data, 'inlineimg', 'image.jpeg', PHPMailer::ENCODING_BASE64, 'image/jpeg');
-    }
 
     // Email content
     $mail->isHTML(true);
@@ -168,7 +221,7 @@ try {
         Merci beaucoup pour ton message !<br><br>  Nous nous réjouissons de ton soutien et de ta collaboration pour maintenir notre ville en bon état. Nous nous en occuperons le plus rapidement possible et nous te tiendrons au courant.  
         <br>
 
-		<div>' . $description . '<br><br>' . $email . '<br><br><a href="https://www.openstreetmap.org/?mlat=' . $lat . '&mlon=' . $lng . '9#map=18/' . $lat . '/' . $lng . '&layers=C">Standort des Schadens</a>' . '<br><br>' . $id . '<br><br>' . $updateUser . '
+		<div>' . $description . '<br><br>' . $email . '<br><br><a href="https://www.openstreetmap.org/?mlat=' . $lat . '&mlon=' . $lng . '9#map=18/' . $lat . '/' . $lng . '&layers=C">Standort des Schadens</a>' . '<br><br>ID ' . $id . '<br><br>' . $updateUser_text . '
 
 <br>
 <br>

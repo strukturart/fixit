@@ -6,6 +6,57 @@ import m from "mithril";
 import { v4 as uuidv4 } from "uuid";
 import vectorTileLayer from "leaflet-vector-tile-layer";
 import maplibreGL from "@maplibre/maplibre-gl-leaflet";
+import { point, polygon, booleanPointInPolygon } from "@turf/turf";
+import proj4 from "proj4";
+import "proj4leaflet";
+
+import dotenv from "dotenv";
+dotenv.config();
+
+//coord converter
+proj4.defs(
+  "EPSG:2056",
+  "+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 " +
+    "+k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel " +
+    "+towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs"
+);
+
+//check if lat,lng in zone
+let check_if_point_in_zone = (lat, lng, zone) => {
+  const ppoint = point([lng, lat]);
+  return booleanPointInPolygon(ppoint, zone);
+};
+
+let owner_zone = "";
+let city_zone = "";
+
+fetch(process.env.public_private_zone, { mode: "cors" }) // Change to "cors" for typical use cases
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error("Network response was not ok"); // Error handling for non-2xx responses
+    }
+    return response.json(); // Parsing the response as JSON
+  })
+  .then((data) => {
+    owner_zone = data.grundeigentum_privates.features;
+  })
+  .catch((error) => {
+    console.error("There was a problem with the fetch operation:", error);
+  });
+
+fetch(process.env.zone, { mode: "cors" }) // Change to "cors" for typical use cases
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error("Network response was not ok"); // Error handling for non-2xx responses
+    }
+    return response.json(); // Parsing the response as JSON
+  })
+  .then((data) => {
+    city_zone = data.feature.geometry.coordinates[0][0];
+  })
+  .catch((error) => {
+    console.error("There was a problem with the fetch operation:", error);
+  });
 
 export let status = {
   default_lang: "de",
@@ -20,6 +71,7 @@ let report = {
   email: null,
   id: uuidv4(),
   updateUser: false,
+  owner: "public",
 };
 
 let translation;
@@ -48,6 +100,9 @@ let trans = () => {
       form_toggle_true: "Ja",
 
       form_toggle_false: "Nein",
+
+      map_marker_is_outside:
+        "Du kannst Schäden nur imnerhalb der Gemeindegrenze melden",
 
       map_marker_popup: "<p>Bewege mich zum Ort der Schadens</p>",
 
@@ -86,6 +141,9 @@ let trans = () => {
 
       map_marker_popup: "<p>Me déplacer vers le lieu du dommage</p>",
 
+      map_marker_is_outside:
+        "Vous ne pouvez déclarer les dommages que dans les limites communales",
+
       impressum: "<strong>Impressum & protection des données</strong>",
       impressum_text: "Ihre Daten...",
       success_text:
@@ -97,6 +155,48 @@ let trans = () => {
 };
 
 trans();
+
+// Function to check if a point (lat, lng) is in a zone
+let check_owner = (lat, lng) => {
+  if (check_if_point_in_zone(lat, lng, city_zone)) {
+    report.zone = true;
+  } else {
+    report.zone = false;
+    side_toaster(translation.map_marker_is_outside, 3000);
+  }
+
+  report.owner = "public";
+
+  for (let i = 0; i < owner_zone.length; i++) {
+    const e = owner_zone[i];
+
+    if (e.geometry.coordinates[0][0].length > 4) {
+      try {
+        // Transform the polygon coordinates from EPSG:2056 to EPSG:4326
+        let transformedCoordinates = e.geometry.coordinates[0][0].map(
+          (coord) => {
+            return proj4("EPSG:2056", "EPSG:4326", coord); // Transform each point
+          }
+        );
+
+        // Create a Turf.js polygon with the transformed coordinates
+        let zone = polygon([transformedCoordinates]);
+
+        // Check if the point is in the polygon
+        if (check_if_point_in_zone(lat, lng, zone)) {
+          report.owner = "private";
+          console.log("Point is in the private zone!");
+          break; // Stop the loop if the point is found in the polygon
+        }
+      } catch (error) {
+        console.error("Error creating polygon for item:", e, error.message);
+      }
+    }
+  }
+  if (report.owner !== "private") {
+    console.log("Point is in the public zone!");
+  }
+};
 
 const send_mail = () => {
   const form = document.getElementById("form");
@@ -122,6 +222,7 @@ const send_mail = () => {
       return response.text(); // Parse the response as text
     })
     .then((text) => {
+      console.log(text);
       // Handle the different cases based on the response content
       if (text.includes("description is empty")) {
         side_toaster(translation.form_message_1, 4000);
@@ -149,7 +250,7 @@ let map_func = () => {
   let marker_current_position;
 
   let map = new L.Map("map", {
-    minZoom: 10,
+    minZoom: 1,
     keyboard: true,
     zoomControl: true,
     enableHighAccuracy: true,
@@ -162,7 +263,7 @@ let map_func = () => {
   //https://gitlab.com/jkuebart/Leaflet.VectorTileLayer/
 
   let options = {
-    minZoom: 18,
+    minZoom: 1,
     maxZoom: 22,
     maxNativeZoom: 14,
 
@@ -193,11 +294,24 @@ let map_func = () => {
     useCache: true,
     maxNativeZoom: 18,
     maxZoom: 22,
-    minZoom: 10,
+    minZoom: 1,
     crossOrigin: true,
   });
 
   map.addLayer(vectorLayer);
+
+  city_zone = polygon([city_zone]);
+
+  // Define a style for the polygon
+  let geoJsonStyle = {
+    color: "blue", // Border color
+    fillColor: "green", // Fill color
+    fillOpacity: 0, // Opacity of the fill
+    weight: 3, // Border thickness
+  };
+
+  // Add the polygon to the Leaflet map with the specified style
+  L.geoJSON(city_zone, { style: geoJsonStyle }).addTo(map);
 
   map.setView([report.lat, report.lng], 18);
 
@@ -233,8 +347,8 @@ let map_func = () => {
       }
       marker_current_position.openPopup();
       report.lat = position.coords.latitude;
-
       report.lng = position.coords.longitude;
+      check_owner(report.lat, report.lng);
     } else {
       map.setView([report.lat, report.lng], 20);
       marker_current_position.setLatLng([report.lat, report.lng], 20);
@@ -245,6 +359,8 @@ let map_func = () => {
         });
       }
       marker_current_position.openPopup();
+
+      check_owner(report.lat, report.lng);
     }
 
     //set marker
@@ -272,6 +388,7 @@ let map_func = () => {
       report.lng = latLng.lng;
       report.set = true;
       marker_current_position.closeTooltip();
+      check_owner(latLng.lat, latLng.lng);
     });
 
     //move marker
@@ -288,6 +405,8 @@ let map_func = () => {
       report.lat = position.lat;
       report.lng = position.lng;
       report.set = true;
+
+      check_owner(position.lat, position.lng);
     });
   }
 
@@ -696,6 +815,7 @@ var send = {
             m("input", {
               class: "text",
               type: "email",
+              autocomplete: "email",
               placeholder: "E-Mail",
               oninput: (e) => {
                 report.email = e.target.value;

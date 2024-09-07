@@ -312,7 +312,7 @@ div#intro img {
   margin: 0px 0 0 0;
 }
 form {
-  padding: 0 0 60px 0;
+  padding: 0 0 160px 0;
 }
 
 form h1 {
@@ -439,7 +439,7 @@ div#side-toast {
   overflow: none;
   background: rgb(143, 56, 224);
   color: white;
-  z-index: 10;
+  z-index: 1000000000000;
   padding: 12px;
   top: 50vh;
   border-bottom-right-radius: 15px;
@@ -488,8 +488,8 @@ img.myMarker {
 #map {
   min-height: 100%;
   width: 100vw;
-
   position: absolute;
+  z-index: 1;
 }
 
 .map-wrapper {

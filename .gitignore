@@ -16,3 +16,5 @@ webpage-uploader.sh
 /vendor
 /webpage/*
 /webpage
+
+/webpage/data.json
