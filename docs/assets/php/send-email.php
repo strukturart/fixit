@@ -34,6 +34,11 @@ $smtpUser = $_ENV['SMTP_USER'];
 $smtpPass = $_ENV['SMTP_PASS'];
 $smtpPort = $_ENV['SMTP_PORT'];
 
+$email_from = $_ENV['email_from'];
+$email_receipt = $_ENV['email_receipt'];
+
+
+
 // Use these variables with PHPMailer
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -183,8 +188,8 @@ try {
     $mail->Port = $smtpPort;
 
     // Recipients
-    $mail->setFrom('info@velokurierbiel.ch');
-    $mail->addAddress('strukturart@gmail.com');
+    $mail->setFrom($email_from);
+    $mail->addAddress($email_receipt);
     $mail->addAddress($email);
     $mail->WordWrap = 1550; // Set word wrap to 50 characters
     $mail->isHTML(true); // Set email format to HTML

@@ -462,6 +462,29 @@ img.myMarker {
   filter: hue-rotate(120deg);
 }
 
+#button-photo-select {
+  position: fixed;
+  bottom: 18%;
+  z-index: 30000000000000000;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 20px;
+  display: flex; /* Changed from inline-flex to flex */
+  justify-content: center;
+  align-items: center; /* Added align-items to center vertically */
+}
+
+#button-photo-select img {
+  width: 30px;
+  margin: -5px 0;
+}
+
+#button-photo-select div {
+  display: flex;
+  margin: 0px 0 0 0;
+  gap: 20px;
+}
+
 #button-photo {
   position: fixed;
   bottom: 12%;

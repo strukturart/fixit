@@ -6,11 +6,14 @@
   "start_url": "/index.html",
   "short_name": "fixit",
   "categories": ["utilities"],
-  "theme_color": "#ffffff",
+
+  "theme_color": "#4a67e5",
+  "background_color": "#4a67e5",
+
   "orientation": "natural",
   "display": "standalone",
   "userAgentInfo": "fixit written by strukturart@gmail.com",
-  "version": "0.03",
+  "version": "0.04",
 
   "icons": [
     {

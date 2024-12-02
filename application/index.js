@@ -21,6 +21,21 @@ proj4.defs(
     "+towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs"
 );
 
+// Define EPSG:4326 (WGS84) and EPSG:2056 (LV95 - Swiss system)
+let wgs84 = "+proj=longlat +datum=WGS84 +no_defs"; // WGS84
+let lv95 =
+  "+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +datum=WGS84 +units=m +no_defs"; // Swiss LV95
+
+// Convert from WGS84 (lat/lng) to LV95
+function WGS84toLV95(lat, lng) {
+  let [easting, northing] = proj4(wgs84, lv95, [lng, lat]);
+
+  return {
+    easting,
+    northing,
+  };
+}
+
 //check if lat,lng in zone
 let check_if_point_in_zone = (lat, lng, zone) => {
   const ppoint = point([lng, lat]);
@@ -29,6 +44,7 @@ let check_if_point_in_zone = (lat, lng, zone) => {
 
 let owner_zone = "";
 let city_zone = "";
+let ccity_zone = "";
 
 fetch(process.env.public_private_zone, { mode: "cors" }) // Change to "cors" for typical use cases
   .then((response) => {
@@ -65,8 +81,8 @@ export let status = {
 
 let report = {
   set: false,
-  lat: 46.57591,
-  lng: 7.84956,
+  lat: 47.143299,
+  lng: 7.24876,
   img: null,
   email: null,
   id: uuidv4(),
@@ -86,6 +102,7 @@ let trans = () => {
       button_5: "< zurück",
       button_6: "Foto ersetzen",
       button_7: "weiter >",
+      button_8: "Foto auswählen",
 
       form_message_0: "Es ist ein Fehler aufgetreten",
       form_message_1: "Bitte beschreibe den Schaden",
@@ -124,6 +141,7 @@ let trans = () => {
       button_5: "< retour",
       button_6: "Foto ersetzen",
       button_7: "continuer >",
+      button_8: "Foto auswählen",
 
       form_message_0: "Une erreur est survenue",
       form_message_1: "Veuillez décrire le dommage",
@@ -158,7 +176,7 @@ trans();
 
 // Function to check if a point (lat, lng) is in a zone
 let check_owner = (lat, lng) => {
-  if (check_if_point_in_zone(lat, lng, city_zone)) {
+  if (check_if_point_in_zone(lat, lng, ccity_zone)) {
     report.zone = true;
   } else {
     report.zone = false;
@@ -275,32 +293,47 @@ let map_func = () => {
     "https://vectortiles.geo.admin.ch/tiles/ch.swisstopo.imagerybasemap.vt/v1.0.0/{z}/{x}/{y}.pbf";
   const vectorLayer = vectorTileLayer(vectorURL, options);
 
-  L.maplibreGL({
+  let geoadmin = L.maplibreGL({
     style:
       "https://vectortiles.geo.admin.ch/styles/ch.swisstopo.imagerybasemap.vt/style.json",
-  }).addTo(map);
-
-  var d = L.tileLayer.wms("https://wms.geo.admin.ch/", {
-    layers: "ch.swisstopo.amtliches-gebaeudeadressverzeichnis",
-    SERVICE: "WMS",
-    crs: L.CRS.EPSG3857,
-    REQUEST: "GetMap",
-    format: "image/png",
-    transparent: true,
-    TILED: true,
-    TileSetId: 30,
-    attribution: "map.geo.admin.ch",
-    cacheMaxAge: 2592000000,
-    useCache: true,
-    maxNativeZoom: 18,
-    maxZoom: 22,
-    minZoom: 1,
-    crossOrigin: true,
   });
 
-  map.addLayer(vectorLayer);
+  var stadt_biel = L.tileLayer
+    .wms(
+      "https://biel-bienne.mapplus.ch/cgi-bin/mapserv?map=/data/Client_Data/biel-bienne/wms_stadtplan.map",
+      {
+        SERVICE: "WMS",
+        crs: L.CRS.EPSG2056,
+        format: "image/png",
+        transparent: true,
+        TILED: true,
+        TileSetId: 30,
+        attribution: "map.geo.admin.ch",
+        maxNativeZoom: 20,
+        maxZoom: 22,
+        minZoom: 1,
+        layers:
+          "e321_stadtplan,sp_strassenmarkierungen,e322_fussgaengerstreifen,x_kronenflaeche_schematisch_shadows,e321_av_bodenbedeckung",
+        version: "1.3.0",
+      }
+    )
+    .addTo(map);
 
-  city_zone = polygon([city_zone]);
+  //map.addLayer(vectorLayer);
+  map.addLayer(stadt_biel);
+
+  var baseMaps = {
+    "Biel/Bienne": stadt_biel,
+    "GeoAdmin": geoadmin,
+  };
+
+  L.control.layers(baseMaps).addTo(map);
+
+  map.addEventListener("baselayerchange", function () {
+    map.fire("click");
+  });
+
+  ccity_zone = polygon([city_zone]);
 
   // Define a style for the polygon
   let geoJsonStyle = {
@@ -311,7 +344,7 @@ let map_func = () => {
   };
 
   // Add the polygon to the Leaflet map with the specified style
-  L.geoJSON(city_zone, { style: geoJsonStyle }).addTo(map);
+  L.geoJSON(polygon([city_zone]), { style: geoJsonStyle }).addTo(map);
 
   map.setView([report.lat, report.lng], 18);
 
@@ -362,57 +395,121 @@ let map_func = () => {
 
       check_owner(report.lat, report.lng);
     }
-
-    //set marker
-    let buttonClicked = false;
-
-    // Function to handle button clicks
-    function handleButtonClick(e) {
-      if (e.target.classList.contains("item")) {
-        buttonClicked = true;
-      }
-    }
-
-    // Attach event listeners to all buttons
-    document.querySelectorAll("button").forEach((button) => {
-      button.addEventListener("click", handleButtonClick);
-    });
-
-    // Handle map clicks
-    map.on("click", function (e) {
-      if (buttonClicked) return; // Do nothing if a button was clicked
-      popup = null;
-      const latLng = e.latlng;
-      marker_current_position.setLatLng(latLng);
-      report.lat = latLng.lat;
-      report.lng = latLng.lng;
-      report.set = true;
-      marker_current_position.closeTooltip();
-      check_owner(latLng.lat, latLng.lng);
-    });
-
-    //move marker
-    marker_current_position.on("dragstart", function (e) {
-      map.dragging.disable(); // Disable map dragging
-      popup = null;
-    });
-
-    marker_current_position.on("dragend", function (e) {
-      map.dragging.enable(); // Re-enable map dragging
-      var marker = e.target;
-      var position = marker.getLatLng();
-
-      report.lat = position.lat;
-      report.lng = position.lng;
-      report.set = true;
-
-      check_owner(position.lat, position.lng);
-    });
   }
 
   function error() {
     side_toaster("Sorry, no position available.", 2000);
+
+    map.setView([report.lat, report.lng], 20);
+    marker_current_position.setLatLng([report.lat, report.lng], 20);
+    if (!marker_current_position.getPopup()) {
+      marker_current_position.bindPopup(translation.map_marker_popup, {
+        closeOnClick: true,
+        autoClose: false,
+      });
+    }
+    marker_current_position.openPopup();
   }
+
+  //set marker
+  let buttonClicked = false;
+
+  // Function to handle button clicks
+  function handleButtonClick(e) {
+    if (e.target.classList.contains("item")) {
+      buttonClicked = true;
+    }
+  }
+
+  // Attach event listeners to all buttons
+  document.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", handleButtonClick);
+  });
+
+  // Handle map clicks
+  map.on("click", function (e) {
+    if (buttonClicked) return; // Do nothing if a button was clicked
+    popup = null;
+
+    const latLng = e.latlng;
+    marker_current_position.setLatLng(latLng);
+    report.lat = latLng.lat;
+    report.lng = latLng.lng;
+    report.LV95 = WGS84toLV95(latLng.lat, latLng.lng);
+    report.set = true;
+    marker_current_position.closeTooltip();
+    check_owner(latLng.lat, latLng.lng);
+
+    console.log(report.LV95);
+
+    let t = report.LV95.easting + "," + report.LV95.northing;
+
+    let f =
+      "https://www.openstreetmap.org/?mlat=" +
+      report.lat +
+      "&mlon=" +
+      report.lng +
+      "#map=18/" +
+      report.lat +
+      "/" +
+      report.lng;
+
+    console.log(f);
+
+    console.log(
+      "https://map.geo.admin.ch/?center=" + t + "&z=10&crosshair=cross"
+    );
+  });
+
+  //move marker
+  marker_current_position.on("dragstart", function (e) {
+    map.dragging.disable(); // Disable map dragging
+    popup = null;
+  });
+
+  marker_current_position.on("dragend", function (e) {
+    map.dragging.enable();
+    console.log(e);
+    var marker = e.target;
+    var position = marker.getLatLng();
+
+    report.lat = position.lat;
+    report.lng = position.lng;
+    report.LV95 = WGS84toLV95(position.lat, position.lng);
+
+    report.set = true;
+
+    console.log(report);
+
+    check_owner(position.lat, position.lng);
+  });
+};
+
+let select_image = () => {
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".jpeg, .jpg, .png, .gif, .bmp, .webp";
+  fileInput.style.display = "none";
+  document.body.appendChild(fileInput);
+
+  fileInput.click();
+
+  fileInput.addEventListener("change", function (event) {
+    const file = event.target.files[0];
+
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        const dataURL = event.target.result; // The data URL is here
+
+        report.img = dataURL; // Set the data URL for report.img
+        m.route.set("/imageView");
+      };
+
+      reader.readAsDataURL(file); // Convert file to Data URL
+    }
+  });
 };
 
 var root = document.getElementById("app");
@@ -485,7 +582,11 @@ var map = {
                 class: "level-1",
                 id: "button-photo",
                 onclick: () => {
-                  m.route.set("/getImage");
+                  if (report.zone) {
+                    select_image();
+                  } else {
+                    side_toaster(translation.map_marker_is_outside, 4000);
+                  }
                 },
               },
               [
@@ -516,7 +617,11 @@ var map = {
                 {
                   class: "item",
                   onclick: () => {
-                    m.route.set("/send");
+                    if (report.zone) {
+                      m.route.set("/send");
+                    } else {
+                      side_toaster(translation.map_marker_is_outside, 4000);
+                    }
                   },
                 },
                 translation.button_0
@@ -765,7 +870,8 @@ var imageView = {
               "button",
               {
                 onclick: () => {
-                  m.route.set("/getImage");
+                  // m.route.set("/getImage");
+                  select_image();
                 },
               },
               translation.button_6
