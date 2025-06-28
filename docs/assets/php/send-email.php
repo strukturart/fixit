@@ -71,6 +71,14 @@ try {
         exit();
     }
 
+    $t = isset($_POST['LV95_url']) ? $_POST['LV95_url'] : '';
+
+    $map_url = "https://map.geo.admin.ch/#/map?lang=de&center=" .
+        $t .
+        "&z=13&bgLayer=ch.swisstopo.swissimage&topic=ech&crosshair=cross," .
+        $t .
+        "&layers=ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.vbs.schiessanzeigen,f;ch.astra.wanderland-sperrungen_umleitungen,f;ch.swisstopo.lubis-luftbilder_farbe@year=all,f&catalogNodes=ech,457,458,485";
+
 
     $updateUser = isset($_POST['updateUser']) ? $_POST['updateUser'] : null;
 
@@ -208,7 +216,7 @@ try {
 		<head>
 		<style type="text/css">
 		@import url("http://fonts.googleapis.com/css?family=Roboto");
-		p, h1, h2, h3, h4, ol, li, ul { font-family: "Roboto", "Arial";  }
+		p, h1, h2, h3, h4, ol, li, ul ,div{ font-family: "Roboto", "Arial";  }
 		h1{font-weght:bold; font-size:24px;}
 		</style>
 		
@@ -226,7 +234,7 @@ try {
         Merci beaucoup pour ton message !<br><br>  Nous nous réjouissons de ton soutien et de ta collaboration pour maintenir notre ville en bon état. Nous nous en occuperons le plus rapidement possible et nous te tiendrons au courant.  
         <br>
 
-		<div>' . $description . '<br><br>' . $email . '<br><br><a href="https://www.openstreetmap.org/?mlat=' . $lat . '&mlon=' . $lng . '9#map=18/' . $lat . '/' . $lng . '&layers=C">Standort des Schadens</a>' . '<br><br>ID ' . $id . '<br><br>' . $updateUser_text . '
+		<div>' . $description . '<br><br>' . $email . '<br><br><a href="' . $map_url . '">Standort des Schadens</a>' . '<br><br>ID ' . $id . '<br><br>' . $updateUser_text . '
 
 <br>
 <br>

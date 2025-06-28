@@ -21,18 +21,18 @@ proj4.defs(
     "+towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs"
 );
 
-// Define EPSG:4326 (WGS84) and EPSG:2056 (LV95 - Swiss system)
-let wgs84 = "+proj=longlat +datum=WGS84 +no_defs"; // WGS84
+/// Define WGS84 (EPSG:4326) and LV95 (EPSG:2056) systems
+let wgs84 = "+proj=longlat +datum=WGS84 +no_defs"; // WGS84 (EPSG:4326)
 let lv95 =
-  "+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +datum=WGS84 +units=m +no_defs"; // Swiss LV95
+  "+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs"; // Swiss LV95 (EPSG:2056)
 
 // Convert from WGS84 (lat/lng) to LV95
 function WGS84toLV95(lat, lng) {
   let [easting, northing] = proj4(wgs84, lv95, [lng, lat]);
 
   return {
-    easting,
-    northing,
+    easting: Math.round(easting), // Round to avoid unnecessary precision
+    northing: Math.round(northing),
   };
 }
 
@@ -382,6 +382,12 @@ let map_func = () => {
       report.lat = position.coords.latitude;
       report.lng = position.coords.longitude;
       check_owner(report.lat, report.lng);
+
+      report.LV95 = WGS84toLV95(report.lat, report.lng);
+      report.set = true;
+      report.LV95_url = report.LV95.easting + "," + report.LV95.northing;
+
+      console.log(report);
     } else {
       map.setView([report.lat, report.lng], 20);
       marker_current_position.setLatLng([report.lat, report.lng], 20);
@@ -440,9 +446,8 @@ let map_func = () => {
     marker_current_position.closeTooltip();
     check_owner(latLng.lat, latLng.lng);
 
-    console.log(report.LV95);
-
     let t = report.LV95.easting + "," + report.LV95.northing;
+    report.LV95_url = report.LV95.easting + "," + report.LV95.northing;
 
     let f =
       "https://www.openstreetmap.org/?mlat=" +
@@ -454,11 +459,14 @@ let map_func = () => {
       "/" +
       report.lng;
 
-    console.log(f);
+    f =
+      "https://map.geo.admin.ch/#/map?lang=de&center=" +
+      t +
+      "&z=13&bgLayer=ch.swisstopo.swissimage&topic=ech&crosshair=cross," +
+      t +
+      "&layers=ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.vbs.schiessanzeigen,f;ch.astra.wanderland-sperrungen_umleitungen,f;ch.swisstopo.lubis-luftbilder_farbe@year=all,f&catalogNodes=ech,457,458,485";
 
-    console.log(
-      "https://map.geo.admin.ch/?center=" + t + "&z=10&crosshair=cross"
-    );
+    console.log(f);
   });
 
   //move marker
@@ -469,19 +477,20 @@ let map_func = () => {
 
   marker_current_position.on("dragend", function (e) {
     map.dragging.enable();
-    console.log(e);
     var marker = e.target;
     var position = marker.getLatLng();
 
     report.lat = position.lat;
     report.lng = position.lng;
     report.LV95 = WGS84toLV95(position.lat, position.lng);
-
     report.set = true;
 
-    console.log(report);
+    report.LV95_url = report.LV95.easting + "," + report.LV95.northing;
 
-    check_owner(position.lat, position.lng);
+    marker_current_position.closeTooltip();
+    check_owner(latLng.lat, latLng.lng);
+
+    console.log(report);
   });
 };
 
