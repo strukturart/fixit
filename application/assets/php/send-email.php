@@ -144,7 +144,7 @@ try {
         // Attach the image as an inline attachment
         $mail->addStringEmbeddedImage($data, 'inlineimg', 'image.jpeg', PHPMailer::ENCODING_BASE64, 'image/jpeg');
     }
-
+    /*
     // Path to the JSON file
     $jsonFilePath = '../../data.json';
 
@@ -182,7 +182,7 @@ try {
     }
 
 
-
+*/
 
 
 

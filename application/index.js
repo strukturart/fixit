@@ -422,9 +422,7 @@ let map_func = () => {
 
   // Function to handle button clicks
   function handleButtonClick(e) {
-    if (e.target.classList.contains("item")) {
-      buttonClicked = true;
-    }
+    buttonClicked = true;
   }
 
   // Attach event listeners to all buttons
@@ -465,8 +463,6 @@ let map_func = () => {
       "&z=13&bgLayer=ch.swisstopo.swissimage&topic=ech&crosshair=cross," +
       t +
       "&layers=ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.vbs.schiessanzeigen,f;ch.astra.wanderland-sperrungen_umleitungen,f;ch.swisstopo.lubis-luftbilder_farbe@year=all,f&catalogNodes=ech,457,458,485";
-
-    console.log(f);
   });
 
   //move marker
@@ -489,8 +485,6 @@ let map_func = () => {
 
     marker_current_position.closeTooltip();
     check_owner(latLng.lat, latLng.lng);
-
-    console.log(report);
   });
 };
 

@@ -79,6 +79,7 @@ try {
         $t .
         "&layers=ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.vbs.schiessanzeigen,f;ch.astra.wanderland-sperrungen_umleitungen,f;ch.swisstopo.lubis-luftbilder_farbe@year=all,f&catalogNodes=ech,457,458,485";
 
+    $map_url = "https://www.openstreetmap.org/?mlat=" . $lat . "&mlon=" . $lng . "#map=16/" . $lat . "/" . $lng;
 
     $updateUser = isset($_POST['updateUser']) ? $_POST['updateUser'] : null;
 
@@ -143,7 +144,7 @@ try {
         // Attach the image as an inline attachment
         $mail->addStringEmbeddedImage($data, 'inlineimg', 'image.jpeg', PHPMailer::ENCODING_BASE64, 'image/jpeg');
     }
-
+    /*
     // Path to the JSON file
     $jsonFilePath = '../../data.json';
 
@@ -181,7 +182,7 @@ try {
     }
 
 
-
+*/
 
 
 
@@ -247,6 +248,7 @@ try {
 
     $mail->Body .= '
     </div>
+    <a href="https://fixit.velokurierbiel.ch">Fixit</a>
 	</div>
     <div style="width: 700px;
 	padding: 20px 20px 40px;
